@@ -56,7 +56,10 @@ const searchMutex = new Mutex();
 const search = async (page, query, pages_nb) => {
   const release = await searchMutex.acquire();
   try {
-    await page.click(".M2vV3");
+    const selector = ".M2vV3";
+    if (await page.$(selector)) {
+      await page.click(selector);
+    }
     await page.type("textarea", query);
     await page.keyboard.press("Enter");
     await page.waitForNavigation();
