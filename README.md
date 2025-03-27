@@ -27,7 +27,7 @@ docker build --platform=linux/arm64 -t google-serp .
 docker build --platform=linux/amd64 -t google-serp .
 
 # Run the container
-docker run -p 3001:3001 google-serp
+docker run -e TWO_CAPTCHA_API_KEY=your-key -p 3001:3001 google-serp
 ```
 
 ## Development
@@ -53,6 +53,7 @@ The server will start on port 3001.
 - `PUPPETEER_EXECUTABLE_PATH`: Path to Chromium browser (default: `/usr/bin/chromium-browser`)
 - `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD`: Skip Chromium download (default: `true`)
 - `CHROMIUM_FLAGS`: Chrome flags for headless mode
+- `TWO_CAPTCHA_API_KEY`: 2captcha API key for captcha solving
 
 ## Architecture
 

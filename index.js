@@ -53,7 +53,7 @@ const run_script = (positionOffset) => {
   };
 };
 const searchMutex = new Mutex();
-const search = async (page, query) => {
+const search = async (page, query, pages_nb) => {
   const release = await searchMutex.acquire();
   try {
     await page.click(".M2vV3");
@@ -66,7 +66,7 @@ const search = async (page, query) => {
       const data = await page.evaluate(run_script, positionOffset);
       results.push(data);
       positionOffset += data.search_results.length;
-      if (!data.next || positionOffset / 10 >= 3) {
+      if (!data.next || positionOffset / 10 >= pages_nb) {
         break;
       }
       await page.goto("https://www.google.com" + data.next);
@@ -109,11 +109,16 @@ const app = express();
 app.use(express.json());
 app.get("/api/search", async (req, res) => {
   try {
-    const { q, token } = req.query;
+    const { q, token, pages_nb } = req.query;
     if (!q) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
-    const results = await search(page, q);
+    if (!pages_nb) {
+      return res
+        .status(400)
+        .json({ error: "Query parameter 'pages_nb' is required" });
+    }
+    const results = await search(page, q, pages_nb);
     res.json(results);
   } catch (error) {
     console.error("Search error:", error);
