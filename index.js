@@ -88,14 +88,14 @@ const initBrowser = async () => {
   try {
     browser = await puppeteer.launch({
       headless: true,
-      slowMo: 50,
+      // slowMo: 50,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
       args: process.env.CHROMIUM_FLAGS.split(" "),
     });
     page = await browser.newPage();
     await page.goto("https://www.google.com/");
     await page.click("#L2AGLb");
-    await page.type("textarea", "arioz");
+    await page.type("textarea", "google");
     await page.keyboard.press("Enter");
     console.log("Solving Captcha");
     await page.waitForSelector("iframe");

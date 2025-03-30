@@ -1,3 +1,6 @@
+# docker build --platform=linux/amd64,linux/arm64 -t olivier86/google-serp:latest --push .
+# docker run -e TWO_CAPTCHA_API_KEY=token -p 3001:3001 olivier86/google-serp:latest
+
 # Use Node.js 18 Alpine as the base image
 FROM alpine
 
