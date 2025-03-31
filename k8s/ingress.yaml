@@ -5,8 +5,9 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
+  ingressClassName: nginx
   rules:
-    - host: 127.0.0.1 # Replace with your domain
+    - host: fetchserp.com # Replace with your domain
       http:
         paths:
           - path: /
