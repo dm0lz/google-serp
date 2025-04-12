@@ -126,7 +126,7 @@ const initBrowser = async (country) => {
       country
     ].solveRecaptchas();
     await pages[country].waitForSelector('[role="combobox"]', {
-      timeout: 90000,
+      timeout: 120000,
     });
     console.log(`${country} Captcha Solved`);
     if (await pages[country].$("iframe")) {
