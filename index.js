@@ -3,7 +3,7 @@ const { Mutex } = require("async-mutex");
 const puppeteer = require("puppeteer-extra");
 const RecaptchaPlugin = require("puppeteer-extra-plugin-recaptcha");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
-const countries = ["de", "fr"];
+const countries = ["us", "fr", "de", "es"];
 // require("dotenv").config();
 puppeteer.use(
   RecaptchaPlugin({
@@ -127,6 +127,9 @@ const initBrowser = async (country) => {
       timeout: 90000,
     });
     console.log(`${country} Captcha Solved`);
+    if (await pages[country].$("iframe")) {
+      await pages[country].solveRecaptchas();
+    }
   } catch (error) {
     console.log("Browser initialization failed:", error);
   }
