@@ -3,6 +3,8 @@ const { Mutex } = require("async-mutex");
 const puppeteer = require("puppeteer-extra");
 const RecaptchaPlugin = require("puppeteer-extra-plugin-recaptcha");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
+const countries = ["de", "fr"];
+// require("dotenv").config();
 puppeteer.use(
   RecaptchaPlugin({
     provider: {
@@ -82,28 +84,42 @@ const search = async (page, query, pages_nb) => {
     release();
   }
 };
-let browser;
-let page;
-const initBrowser = async () => {
+let browsers = {};
+let pages = {};
+const initBrowser = async (country) => {
   try {
-    browser = await puppeteer.launch({
+    browsers[country] = await puppeteer.launch({
       headless: true,
       // slowMo: 50,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
       args: process.env.CHROMIUM_FLAGS.split(" "),
+      args: [`--proxy-server=${process.env.PROXY_SERVER}`],
     });
-    page = await browser.newPage();
-    await page.goto("https://www.google.com/");
-    await page.click("#L2AGLb");
-    await page.type("textarea", "google");
-    await page.keyboard.press("Enter");
+    pages[country] = await browsers[country].newPage();
+    await pages[country].authenticate({
+      username: `customer-${
+        process.env.PROXY_USERNAME
+      }-cc-${country.toUpperCase()}-sessid-${Math.random()
+        .toString(36)
+        .slice(2)}-sesstime-1440`,
+      password: process.env.PROXY_PASSWORD,
+    });
+    await pages[country].goto("https://www.google.com/");
+    const acceptButton = await pages[country].$("#L2AGLb");
+    if (acceptButton) {
+      await acceptButton.click();
+    }
+    await pages[country].type("textarea", "google");
+    await pages[country].keyboard.press("Enter");
     console.log("Solving Captcha");
-    await page.waitForSelector("iframe");
-    const { captchas, filtered, solutions, solved, error } =
-      await page.solveRecaptchas();
-    await page.waitForNavigation();
+    await pages[country].waitForSelector("iframe");
+    const { captchas, filtered, solutions, solved, error } = await pages[
+      country
+    ].solveRecaptchas();
+    await pages[country].waitForSelector('[role="combobox"]', {
+      timeout: 90000,
+    });
     console.log("Captcha Solved");
-    return { browser, page };
   } catch (error) {
     console.log("Browser initialization failed:", error);
   }
@@ -112,7 +128,13 @@ const app = express();
 app.use(express.json());
 app.get("/api/search", async (req, res) => {
   try {
-    const { q, token, pages_nb } = req.query;
+    const { q, token, pages_nb, country } = req.query;
+    if (!country || !countries.includes(country)) {
+      return res.status(400).json({
+        error:
+          "Country parameter 'country' is required and must be one of 'de', 'fr', or 'us'",
+      });
+    }
     if (!q) {
       return res.status(400).json({ error: "Query parameter 'q' is required" });
     }
@@ -121,25 +143,31 @@ app.get("/api/search", async (req, res) => {
         .status(400)
         .json({ error: "Query parameter 'pages_nb' is required" });
     }
-    const results = await search(page, q, pages_nb);
+    const results = await search(pages[country], q, pages_nb);
     res.json(results);
   } catch (error) {
     console.error("Search error:", error);
     res.status(500).json({ error: "Search failed", details: error.message });
     try {
-      if (browser) await browser.close();
-      await initBrowser();
+      if (browsers[country]) await browsers[country].close();
+      await initBrowser(country);
     } catch (e) {
       console.error("Browser reinitialization failed:", e);
     }
   }
 });
 process.on("SIGTERM", async () => {
-  if (browser) await browser.close();
+  for (const browser of Object.values(browsers)) {
+    await browser.close();
+  }
   process.exit(0);
 });
 const PORT = 3001;
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
-  await initBrowser();
+  await Promise.all(
+    countries.map(async (country) => {
+      await initBrowser(country);
+    })
+  );
 });

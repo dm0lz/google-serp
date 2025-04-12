@@ -5,7 +5,7 @@ metadata:
   labels:
     app: google-serp
 spec:
-  replicas: 3 # Start with 3 instances
+  replicas: 1
   selector:
     matchLabels:
       app: google-serp
@@ -27,13 +27,28 @@ spec:
                 secretKeyRef:
                   name: google-serp-secrets
                   key: two-captcha-api-key
+            - name: PROXY_SERVER
+              valueFrom:
+                secretKeyRef:
+                  name: google-serp-secrets
+                  key: proxy-server
+            - name: PROXY_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: google-serp-secrets
+                  key: proxy-username
+            - name: PROXY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: google-serp-secrets
+                  key: proxy-password
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "250m" # 0.25 CPU
+              memory: "0.75Gi"
+              cpu: "750m" # 0.75 CPU
             limits:
               memory: "1Gi"
-              cpu: "500m" # 0.5 CPU
+              cpu: "1000m" # 1 CPU
           readinessProbe:
             httpGet:
               path: /api/search?q=test&pages_nb=1
