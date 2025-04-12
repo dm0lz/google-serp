@@ -119,7 +119,9 @@ const initBrowser = async (country) => {
     await pages[country].type("textarea", "google");
     await pages[country].keyboard.press("Enter");
     console.log(`Solving ${country} Captcha`);
-    await pages[country].waitForSelector("iframe");
+    await pages[country].waitForSelector("iframe", {
+      timeout: 120000,
+    });
     const { captchas, filtered, solutions, solved, error } = await pages[
       country
     ].solveRecaptchas();
@@ -137,8 +139,8 @@ const initBrowser = async (country) => {
 const app = express();
 app.use(express.json());
 app.get("/api/search", async (req, res) => {
+  const { q, token, pages_nb, country } = req.query;
   try {
-    const { q, token, pages_nb, country } = req.query;
     if (!country || !countries.includes(country)) {
       return res.status(400).json({
         error:
