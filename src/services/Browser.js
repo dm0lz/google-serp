@@ -32,7 +32,6 @@ class Browser {
           `--proxy-server=${process.env.PROXY_SERVER}`,
         ],
       });
-      console.log("Browser launched.");
     }
     return this.browser;
   }
