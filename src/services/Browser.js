@@ -24,6 +24,17 @@ class Browser {
   }
 
   async init() {
+    while (!this.isReady) {
+      try {
+        await this.setup();
+      } catch (error) {
+        await this.close();
+        console.error("Error initializing browser:", error);
+      }
+    }
+  }
+
+  async setup() {
     this.browser = await puppeteer.launch(browserOptions);
     console.log(`Browser initialized for ${this.country}`);
     this.page = await this.browser.newPage();
