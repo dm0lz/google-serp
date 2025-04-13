@@ -97,6 +97,8 @@ const initBrowser = async (country) => {
   });
   console.log(`Browser initialized for ${country}`);
   pages[country] = await browsers[country].newPage();
+  pages[country].setDefaultNavigationTimeout(180000);
+  pages[country].setDefaultTimeout(180000);
   console.log(`Page initialized for ${country}`);
   await pages[country].authenticate({
     username: `customer-${
@@ -118,15 +120,11 @@ const initBrowser = async (country) => {
   await pages[country].type("textarea", "google");
   await pages[country].keyboard.press("Enter");
   console.log(`Solving ${country} Captcha`);
-  await pages[country].waitForSelector("iframe", {
-    timeout: 180000,
-  });
+  await pages[country].waitForSelector("iframe");
   const { captchas, filtered, solutions, solved, error } = await pages[
     country
   ].solveRecaptchas();
-  await pages[country].waitForSelector('[role="combobox"]', {
-    timeout: 180000,
-  });
+  await pages[country].waitForSelector('[role="combobox"]');
   console.log(`${country} Captcha Solved`);
   if (await pages[country].$("iframe")) {
     await pages[country].solveRecaptchas();
