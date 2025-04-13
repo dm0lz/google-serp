@@ -87,53 +87,49 @@ const search = async (page, query, pages_nb) => {
 let browsers = {};
 let pages = {};
 const initBrowser = async (country) => {
-  try {
-    browsers[country] = await puppeteer.launch({
-      headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-      args: [
-        ...process.env.CHROMIUM_FLAGS.split(" "),
-        `--proxy-server=${process.env.PROXY_SERVER}`,
-      ],
-    });
-    console.log(`Browser initialized for ${country}`);
-    pages[country] = await browsers[country].newPage();
-    console.log(`Page initialized for ${country}`);
-    await pages[country].authenticate({
-      username: `customer-${
-        process.env.PROXY_USERNAME
-      }-cc-${country.toUpperCase()}-sessid-${Math.random()
-        .toString(36)
-        .slice(2)}-sesstime-1440`,
-      password: process.env.PROXY_PASSWORD,
-    });
-    console.log(`proxy authenticated for ${country}`);
-    await pages[country].goto("https://www.google.com/");
-    const acceptButton = await pages[country].$("#L2AGLb");
-    if (acceptButton) {
-      await acceptButton.click();
-    }
-    console.log(`fetched google for ${country}`);
-    // await pages[country].click("#L2AGLb");
-    await pages[country].waitForSelector("textarea");
-    await pages[country].type("textarea", "google");
-    await pages[country].keyboard.press("Enter");
-    console.log(`Solving ${country} Captcha`);
-    await pages[country].waitForSelector("iframe", {
-      timeout: 120000,
-    });
-    const { captchas, filtered, solutions, solved, error } = await pages[
-      country
-    ].solveRecaptchas();
-    await pages[country].waitForSelector('[role="combobox"]', {
-      timeout: 120000,
-    });
-    console.log(`${country} Captcha Solved`);
-    if (await pages[country].$("iframe")) {
-      await pages[country].solveRecaptchas();
-    }
-  } catch (error) {
-    console.log("Browser initialization failed:", error);
+  browsers[country] = await puppeteer.launch({
+    headless: true,
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+    args: [
+      ...process.env.CHROMIUM_FLAGS.split(" "),
+      `--proxy-server=${process.env.PROXY_SERVER}`,
+    ],
+  });
+  console.log(`Browser initialized for ${country}`);
+  pages[country] = await browsers[country].newPage();
+  console.log(`Page initialized for ${country}`);
+  await pages[country].authenticate({
+    username: `customer-${
+      process.env.PROXY_USERNAME
+    }-cc-${country.toUpperCase()}-sessid-${Math.random()
+      .toString(36)
+      .slice(2)}-sesstime-1440`,
+    password: process.env.PROXY_PASSWORD,
+  });
+  console.log(`proxy authenticated for ${country}`);
+  await pages[country].goto("https://www.google.com/");
+  const acceptButton = await pages[country].$("#L2AGLb");
+  if (acceptButton) {
+    await acceptButton.click();
+  }
+  console.log(`fetched google for ${country}`);
+  // await pages[country].click("#L2AGLb");
+  await pages[country].waitForSelector("textarea");
+  await pages[country].type("textarea", "google");
+  await pages[country].keyboard.press("Enter");
+  console.log(`Solving ${country} Captcha`);
+  await pages[country].waitForSelector("iframe", {
+    timeout: 180000,
+  });
+  const { captchas, filtered, solutions, solved, error } = await pages[
+    country
+  ].solveRecaptchas();
+  await pages[country].waitForSelector('[role="combobox"]', {
+    timeout: 180000,
+  });
+  console.log(`${country} Captcha Solved`);
+  if (await pages[country].$("iframe")) {
+    await pages[country].solveRecaptchas();
   }
 };
 const app = express();
