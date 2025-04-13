@@ -54,4 +54,4 @@ USER appuser
 EXPOSE 3001
 
 # Start the application
-CMD ["node", "index.js"]
+CMD ["yarn", "start"]
