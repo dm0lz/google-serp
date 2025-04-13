@@ -1,6 +1,8 @@
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const RecaptchaPlugin = require("puppeteer-extra-plugin-recaptcha");
+const { browserOptions } = require("../utils/config");
+require("dotenv").config();
 
 puppeteer.use(StealthPlugin());
 puppeteer.use(
@@ -21,23 +23,8 @@ class Browser {
     this.isReady = false;
   }
 
-  async getBrowser() {
-    if (!this.browser) {
-      console.log("Launching new browser instance...");
-      this.browser = await puppeteer.launch({
-        headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-        args: [
-          ...(process.env.CHROMIUM_FLAGS || "").split(" "),
-          `--proxy-server=${process.env.PROXY_SERVER}`,
-        ],
-      });
-    }
-    return this.browser;
-  }
-
   async init() {
-    await this.getBrowser();
+    this.browser = await puppeteer.launch(browserOptions);
     console.log(`Browser initialized for ${this.country}`);
     this.page = await this.browser.newPage();
     this.page.setDefaultNavigationTimeout(180000);

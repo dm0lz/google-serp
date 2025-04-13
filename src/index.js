@@ -3,7 +3,6 @@ const Browser = require("./services/Browser");
 const { searchController } = require("./controllers/searchController");
 const { port, countries } = require("./utils/config");
 const gracefulShutdown = require("./utils/gracefulShutdown");
-require("dotenv").config();
 
 let browsers = {};
 const app = express();
