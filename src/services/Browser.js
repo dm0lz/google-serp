@@ -38,7 +38,7 @@ class Browser {
   }
 
   async init() {
-    this.browser = await this.getBrowser();
+    await this.getBrowser();
     console.log(`Browser initialized for ${this.country}`);
     this.page = await this.browser.newPage();
     this.page.setDefaultNavigationTimeout(180000);
