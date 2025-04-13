@@ -19,39 +19,19 @@ const run_script = (positionOffset) => {
   return {
     next: document.querySelector("#pnnext")?.getAttribute("href"),
     serp_url: document.location.href,
-    search_results: [
-      ...document.querySelectorAll("#search > div > div > div"),
-    ].map((article, index) => ({
-      site_name:
-        article
-          .querySelector(
-            "div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div"
-          )
-          ?.textContent?.trim() || "N/A",
-      url:
-        article
-          .querySelector(
-            "div > div > div > div > div > div > div > div > div > div > div > div > div > div > span > a"
-          )
-          ?.getAttribute("href") || "N/A",
-      title:
-        article
-          .querySelector(
-            "div > div > div > div > div > div > div > div > div > div > div > div > div > div > span > a > h3"
-          )
-          ?.textContent?.trim() || "N/A",
-      description:
-        article
-          .querySelectorAll(
-            "div > div > div > div > div > div > div > div > div > div > div"
-          )
-          [
-            article.querySelectorAll(
-              "div > div > div > div > div > div > div > div > div > div > div"
-            ).length - 1
-          ]?.textContent?.trim() || "N/A",
-      position: positionOffset + index + 1,
-    })),
+    search_results: [...document.querySelectorAll("[data-snc]")].map(
+      (article, index) => ({
+        site_name:
+          article
+            .querySelector("div.notranslate > div > div > div")
+            ?.textContent?.trim() || "N/A",
+        url: article.querySelector("a")?.getAttribute("href") || "N/A",
+        title: article.querySelector("a > h3")?.textContent?.trim() || "N/A",
+        description:
+          article.querySelector("[data-sncf]")?.textContent?.trim() || "N/A",
+        position: positionOffset + index + 1,
+      })
+    ),
   };
 };
 const searchMutex = new Mutex();
@@ -115,7 +95,6 @@ const initBrowser = async (country) => {
     await acceptButton.click();
   }
   console.log(`fetched google for ${country}`);
-  // await pages[country].click("#L2AGLb");
   await pages[country].waitForSelector("textarea");
   await pages[country].type("textarea", "google");
   await pages[country].keyboard.press("Enter");
