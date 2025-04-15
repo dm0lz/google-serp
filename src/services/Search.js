@@ -10,9 +10,9 @@ class Search {
   async call(query) {
     const release = await this.searchMutex.acquire();
     try {
-      if (await this.page.$("iframe")) {
-        await this.page.solveRecaptchas();
-      }
+      // if (await this.page.$("iframe")) {
+      //   await this.page.solveRecaptchas();
+      // }
       await this.page.click(".M2vV3");
       await this.page.type("textarea", query);
       await this.page.keyboard.press("Enter");
@@ -27,7 +27,8 @@ class Search {
           break;
         }
         const currentUrl = new URL(this.page.url());
-        await this.page.goto(`https://www.${currentUrl.hostname}` + data.next);
+        const nextUrl = `https://${currentUrl.hostname}${data.next}`;
+        await this.page.goto(nextUrl);
       }
       return results;
     } catch (error) {

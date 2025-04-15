@@ -20,15 +20,15 @@ const gracefulShutdown = (browsers) => {
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
 
-  process.on("uncaughtException", async (err) => {
-    console.error("Uncaught Exception:", err);
-    await shutdown();
-  });
+  // process.on("uncaughtException", async (err) => {
+  //   console.error("Uncaught Exception:", err);
+  //   await shutdown();
+  // });
 
-  process.on("unhandledRejection", async (reason, promise) => {
-    console.error("Unhandled Rejection at:", promise, "reason:", reason);
-    await shutdown();
-  });
+  // process.on("unhandledRejection", async (reason, promise) => {
+  //   console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  //   await shutdown();
+  // });
 
   process.on("exit", (code) => {
     console.log(`Process exiting with code: ${code}`);

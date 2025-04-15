@@ -32,6 +32,7 @@ const getCountries = async () => {
   const res = await fetch(`${torProxy}/proxies.json`);
   const proxies = await res.json();
   return Object.keys(proxies);
+  // return ["de"];
 };
 
 module.exports = {

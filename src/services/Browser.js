@@ -21,17 +21,20 @@ class Browser {
     this.browser = null;
     this.page = null;
     this.isReady = false;
+    this.solvingCaptcha = false;
+    this.captchaObserver = this.captchaWatch();
   }
 
   async init() {
     let i = 0;
-    while (!this.isReady && i < 3) {
+    while (!this.isReady && i < 5) {
       try {
         await this.setup();
       } catch (error) {
         await this.close();
         console.error("Error initializing browser:", error);
         await this.requestNewIdentity();
+        await new Promise((resolve) => setTimeout(resolve, 30000));
       }
       i++;
     }
@@ -47,32 +50,39 @@ class Browser {
     this.page.setDefaultTimeout(180000);
     console.log(`Page initialized for ${this.country}`);
     await this.page.goto(
-      `https://www.google.${this.country}/?hl=${this.country}`
+      `https://www.google.${this.country}/?hl=${this.country}`,
+      { waitUntil: "domcontentloaded" }
     );
     await this.acceptButton();
     console.log(`fetched google for ${this.country}`);
     await this.page.waitForSelector("textarea");
-    await this.page.type("textarea", "google");
-    await this.page.keyboard.press("Enter");
-    console.log(`Solving ${this.country} Captcha`);
-    await this.page.waitForSelector("iframe");
-    const { captchas, filtered, solutions, solved, error } =
-      await this.page.solveRecaptchas();
+    await this.googleSubmit();
     await this.page.waitForSelector('[role="combobox"]');
-    if (await this.page.$("iframe")) {
-      await this.page.solveRecaptchas();
-    }
     await this.acceptButton();
-    console.log(`${this.country} Captcha Solved`);
     if (!this.page.url().includes("search")) {
-      await this.page.type("textarea", "google");
-      await this.page.keyboard.press("Enter");
-      await this.page.waitForNavigation();
-    }
-    if (await this.page.$("iframe")) {
-      await this.page.solveRecaptchas();
+      await this.googleSubmit();
     }
     this.isReady = true;
+  }
+
+  async googleSubmit() {
+    await this.page.type("textarea", "google");
+    await this.page.keyboard.press("Enter");
+    await this.page.waitForNavigation();
+  }
+
+  captchaWatch() {
+    return setInterval(async () => {
+      if (!this.page) return;
+      try {
+        const currentUrl = await this.page.url();
+        if (currentUrl.includes("sorry")) {
+          await this.handleRecaptcha();
+        }
+      } catch (err) {
+        console.error("Error in captcha interval:", err);
+      }
+    }, 1000);
   }
 
   async acceptButton() {
@@ -83,6 +93,10 @@ class Browser {
   }
 
   async close() {
+    if (this.captchaObserver) {
+      clearInterval(this.captchaObserver);
+      this.captchaObserver = null;
+    }
     if (this.browser) {
       await this.browser.close();
       this.browser = null;
@@ -100,6 +114,25 @@ class Browser {
       console.log(`Response for ${this.country}:`, data);
     } catch (err) {
       console.error(`Error requesting newnym for ${this.country}:`, err);
+    }
+  }
+
+  async handleRecaptcha(retries = 3) {
+    if (this.solvingCaptcha) return;
+    this.solvingCaptcha = true;
+    try {
+      console.log("running solveRecaptcha");
+      await Promise.race([
+        this.page.solveRecaptchas(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), 60000)
+        ),
+      ]);
+    } catch (err) {
+      console.error("Error solving CAPTCHA:", err);
+    } finally {
+      this.solvingCaptcha = false;
+      console.log("finished running solveRecaptcha");
     }
   }
 }
