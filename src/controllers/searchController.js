@@ -1,8 +1,12 @@
 const Search = require("../services/Search");
 const Browser = require("../services/Browser");
-const { countries } = require("../utils/config");
+const { getCountries } = require("../utils/config");
 
 const searchController = (browsers) => {
+  let countries = [];
+  (async () => {
+    countries = await getCountries();
+  })();
   return async (req, res) => {
     const { q, token, pages_nb, country } = req.query;
     try {
@@ -35,7 +39,9 @@ const searchController = (browsers) => {
       res.status(500).json({ error: "Search failed", details: error.message });
       try {
         if (browsers[country]) {
+          await browsers[country].requestNewIdentity();
           await browsers[country].close();
+          browsers[country] = null;
           console.log(`Browser closed for ${country}`);
         }
         browsers[country] = new Browser(country);

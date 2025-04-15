@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer-extra");
 const StealthPlugin = require("puppeteer-extra-plugin-stealth");
 const RecaptchaPlugin = require("puppeteer-extra-plugin-recaptcha");
-const { browserOptions } = require("../utils/config");
+const { browserOptions, torProxy } = require("../utils/config");
 require("dotenv").config();
 
 puppeteer.use(StealthPlugin());
@@ -24,37 +24,32 @@ class Browser {
   }
 
   async init() {
-    while (!this.isReady) {
+    let i = 0;
+    while (!this.isReady && i < 3) {
       try {
         await this.setup();
       } catch (error) {
         await this.close();
         console.error("Error initializing browser:", error);
+        await this.requestNewIdentity();
       }
+      i++;
     }
   }
 
   async setup() {
-    this.browser = await puppeteer.launch(browserOptions);
+    const options = await browserOptions(this.country);
+    console.log(options);
+    this.browser = await puppeteer.launch(options);
     console.log(`Browser initialized for ${this.country}`);
     this.page = await this.browser.newPage();
     this.page.setDefaultNavigationTimeout(180000);
     this.page.setDefaultTimeout(180000);
     console.log(`Page initialized for ${this.country}`);
-    await this.page.authenticate({
-      username: `customer-${
-        process.env.PROXY_USERNAME
-      }-cc-${this.country.toUpperCase()}-sessid-${Math.random()
-        .toString(36)
-        .slice(2)}-sesstime-1440`,
-      password: process.env.PROXY_PASSWORD,
-    });
-    console.log(`proxy authenticated for ${this.country}`);
-    await this.page.goto("https://www.google.com/");
-    const acceptButton = await this.page.$("#L2AGLb");
-    if (acceptButton) {
-      await acceptButton.click();
-    }
+    await this.page.goto(
+      `https://www.google.${this.country}/?hl=${this.country}`
+    );
+    await this.acceptButton();
     console.log(`fetched google for ${this.country}`);
     await this.page.waitForSelector("textarea");
     await this.page.type("textarea", "google");
@@ -67,8 +62,24 @@ class Browser {
     if (await this.page.$("iframe")) {
       await this.page.solveRecaptchas();
     }
+    await this.acceptButton();
     console.log(`${this.country} Captcha Solved`);
+    if (!this.page.url().includes("search")) {
+      await this.page.type("textarea", "google");
+      await this.page.keyboard.press("Enter");
+      await this.page.waitForNavigation();
+    }
+    if (await this.page.$("iframe")) {
+      await this.page.solveRecaptchas();
+    }
     this.isReady = true;
+  }
+
+  async acceptButton() {
+    const acceptButton = await this.page.$("#L2AGLb");
+    if (acceptButton) {
+      await acceptButton.click();
+    }
   }
 
   async close() {
@@ -77,6 +88,18 @@ class Browser {
       this.browser = null;
       this.page = null;
       this.isReady = false;
+    }
+  }
+
+  async requestNewIdentity() {
+    try {
+      const res = await fetch(`${torProxy}/newnym/${this.country}`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      console.log(`Response for ${this.country}:`, data);
+    } catch (err) {
+      console.error(`Error requesting newnym for ${this.country}:`, err);
     }
   }
 }
