@@ -1,4 +1,3 @@
-const Search = require("../services/Search");
 const Browser = require("../services/Browser");
 const { getCountries } = require("../utils/config");
 
@@ -31,8 +30,7 @@ const searchController = (browsers) => {
           error: `Browser not initialized for country ${country}`,
         });
       }
-      const search = new Search(browsers[country], pages_nb);
-      const results = await search.call(q);
+      const results = await browsers[country].search(q, pages_nb);
       res.json(results);
     } catch (error) {
       console.error("Search error:", error);
